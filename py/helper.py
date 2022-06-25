@@ -1,5 +1,6 @@
 import math
-from scipy.integrate import solve_ivp
+from telnetlib import TLS
+from scipy.integrate import solve_ivp, odeint
 from bokeh.core.property.instance import Instance
 from bokeh.io import save
 from bokeh.layouts import column
@@ -62,9 +63,9 @@ def R_co2(T, c_co2, q):
     b_var = b(T)
     t_var = t_h(T)
     qs_var = q_s(T)
-    print(qs_var)
+    # print(qs_var)
     r_co2 =  kT * ( R * T * c_co2 * ( (1- ( (q / qs_var)**t_var) )**(1/t_var) ) - q / (b_var*qs_var) ) 
-    print(r_co2)
+    # print(r_co2)
     return r_co2
 # ODE Part 
 # Repetitive shortcut
@@ -90,6 +91,7 @@ def masss_balan2(episl_r, ρs):
 
 def deriv(t, y):
     T_n, co2_n, q_n = y
+    # T_n, co2_n, q_n, T_n2, co2_n2, q_n2, T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4, T_n5, co2_n5, q_n5 == y
     # rco2_ first, rate of generation 
     T1 = -ener_balan(theta, deltZ) * T_n + ener_balan(theta, deltZ) * T0 + ener_balan2(episl_r)* (R_co2(T_n, co2_n, q_n))+ ener_balan3(a_s, Tw, T0)
     co2_1 = -mass_balan(episl_r, deltZ) * co2_n + mass_balan(episl_r, deltZ) * c_co2_0 - (R_co2(T_n, co2_n, q_n)) * masss_balan2(episl_r, ρs)
@@ -111,23 +113,64 @@ def deriv(t, y):
     co2_5 = -mass_balan(episl_r, deltZ) * co2_n + mass_balan(episl_r, deltZ) * c_co2_0 - (R_co2(T_n, co2_n, q_n)) * masss_balan2(episl_r, ρs)
     q_5 = R_co2(T_n, co2_n, q_n)
 
-    # T_ls = np.array([T1, T2, T3, T4, T5])
-    # T_ls.reshape(5, 1)
-    # co2_ls = np.array([co2_1, co2_2, co2_3, co2_4, co2_5])
-    # co2_ls.reshape(5, 1)
-    # q_ls = np.array([q_1, q_2, q_3, q_4, q_5])
-    # q_ls.reshape(5, 1)
-    # return T_ls, co2_ls, q_ls
-    return T1, T2, T3, T4, T5, co2_1, co2_2, co2_3, co2_4, co2_5, q_1, q_2, q_3, q_4, q_5
+    # result = np.array([T1, T2, T3, T4, T5, co2_1, co2_2, co2_3, co2_4, co2_5, q_1, q_2, q_3, q_4, q_5]).reshape(-1, 1)
+
+    # return [T1, T2, T3, T4, T5, co2_1, co2_2, co2_3, co2_4, co2_5, q_1, q_2, q_3, q_4, q_5]
     
-t0, tf = 0, 10
+    T_ls = np.array([T1, T2, T3, T4, T5])
+    T_ls.reshape(5, 1)
+    co2_ls = np.array([co2_1, co2_2, co2_3, co2_4, co2_5])
+    co2_ls.reshape(5, 1)
+    q_ls = np.array([q_1, q_2, q_3, q_4, q_5])
+    q_ls.reshape(5, 1)
+    result = ([T_ls, co2_ls, q_ls]).reshape(-1, 1)
+    # res1 = [T1, co2_1, q_1]
+    # res2 = [T2, co2_2, q_2]
+    # res3 = [T3, co2_3, q_3]
+    # res4 = [T4, co2_4, q_4]
+    # res5 = [T5, co2_5, q_5]
+    # result = np.transpose([res1, res2, res3, res4, res5])
+    # return result
+    return result
+
+
+def deriv1(t, y):
+    T_n, co2_n, q_n, T_n2, co2_n2, q_n2, T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4, T_n5, co2_n5, q_n5 = y
+    # rco2_ first, rate of generation 
+    T1 = -ener_balan(theta, deltZ) * T_n + ener_balan(theta, deltZ) * T0 + ener_balan2(episl_r)* (R_co2(T_n, co2_n, q_n))+ ener_balan3(a_s, Tw, T0)
+    co2_1 = -mass_balan(episl_r, deltZ) * co2_n + mass_balan(episl_r, deltZ) * c_co2_0 - (R_co2(T_n, co2_n, q_n)) * masss_balan2(episl_r, ρs)
+    q_1 = R_co2(T_n, co2_n, q_n)
+
+    T2 = -ener_balan(theta, deltZ) * T_n2 + ener_balan(theta, deltZ) * T0 + ener_balan2(episl_r)* (R_co2(T_n2, co2_n2, q_n2))+ ener_balan3(a_s, Tw, T0)
+    co2_2 = -mass_balan(episl_r, deltZ) * co2_n2 + mass_balan(episl_r, deltZ) * c_co2_0 - (R_co2(T_n2, co2_n2, q_n2)) * masss_balan2(episl_r, ρs)
+    q_2 = R_co2(T_n2, co2_n2, q_n2)
+
+    T3 = -ener_balan(theta, deltZ) * T_n3 + ener_balan(theta, deltZ) * T0 + ener_balan2(episl_r)* (R_co2(T_n3, co2_n3, q_n3))+ ener_balan3(a_s, Tw, T0)
+    co2_3 = -mass_balan(episl_r, deltZ) * co2_n3 + mass_balan(episl_r, deltZ) * c_co2_0 - (R_co2(T_n3, co2_n3, q_n3)) * masss_balan2(episl_r, ρs)
+    q_3 = R_co2(T_n3, co2_n3, q_n3)
+
+    T4 = -ener_balan(theta, deltZ) * T_n4 + ener_balan(theta, deltZ) * T0 + ener_balan2(episl_r)* (R_co2(T_n4, co2_n4, q_n4))+ ener_balan3(a_s, Tw, T0)
+    co2_4 = -mass_balan(episl_r, deltZ) * co2_n4 + mass_balan(episl_r, deltZ) * c_co2_0 - (R_co2(T_n4, co2_n4, q_n4)) * masss_balan2(episl_r, ρs)
+    q_4 = R_co2(T_n4, co2_n4, q_n4)
+
+    T5 = -ener_balan(theta, deltZ) * T_n5 + ener_balan(theta, deltZ) * T0 + ener_balan2(episl_r)* (R_co2(T_n5, co2_n5, q_n5))+ ener_balan3(a_s, Tw, T0)
+    co2_5 = -mass_balan(episl_r, deltZ) * co2_n5 + mass_balan(episl_r, deltZ) * c_co2_0 - (R_co2(T_n5, co2_n5, q_n5)) * masss_balan2(episl_r, ρs)
+    q_5 = R_co2(T_n5, co2_n5, q_n5)
+    result = np.array([T1, T2, T3, T4, T5, co2_1, co2_2, co2_3, co2_4, co2_5, q_1, q_2, q_3, q_4, q_5])
+    return result
+
+t0, tf = 0.0, 10.0
 ############# initial condition 
 T_initial = 20
 c_co2_0 = 0
 q0 = 0
-init_cond = np.array([20, 0, 0])
+init_cond = np.array([20, 0, 0, 20, 0, 0, 20, 0, 0, 20, 0, 0, 20, 0, 0])
+init_cond1 = np.array([[20, 20, 20, 20, 20], [0, 0, 0, 0, 0],[ 0, 0, 0, 0,0]]).reshape(-1, 1)
+# init_cond = init_cond.reshape(-1, 1)
 N=5
-soln = solve_ivp(deriv, (t0, tf), init_cond) #init_cond = (T, c_co2_0, q0)
+# t_span = np.linspace(t0, tf, N)
+# soln = odeint(deriv, init_cond, t_span)
+soln = solve_ivp(deriv, (t0, tf), init_cond1) #init_cond = (T, c_co2_0, q0)
 # print(soln)
 # Equation 3
 # dq/dt = r_co2
@@ -205,3 +248,8 @@ soln = solve_ivp(deriv, (t0, tf), init_cond) #init_cond = (T, c_co2_0, q0)
 
 # for w in [V_slider , r_slider, T_slider, c_co2_0_slider, episl_r_slider, v0_slider, Tw_slider]:
 #     w.on_change('value', update_data)
+
+
+
+
+
