@@ -5,8 +5,9 @@ from scipy.integrate import solve_ivp, odeint
 from bokeh.io import save, curdoc
 from bokeh.layouts import column, row
 from bokeh.model import Model
-from bokeh.models import CustomJS, Slider, Callback, Panel, HoverTool
+from bokeh.models import CustomJS, Slider, Callback, HoverTool
 from bokeh.plotting import ColumnDataSource, figure, show
+from bokeh.models.widgets import Panel, Tabs
 import numpy as np
 
 # three plots , co2 as y and z as x
@@ -189,16 +190,17 @@ co2_colors = ['darkseagreen','mediumseagreen', 'seagreen', 'green', 'drakolivegr
 q_name = [q_1, q_2, q_3, q_4, q_5]
 q_colors = ['mediumpurple', 'blueviolet', 'darkorchid', 'indigo', 'mediumslateblue']
 source_temp0 = ColumnDataSource(data=dict(vec_Z = vec_Z, T1=T1, T2 = T2, T3 = T3, T4=T4, T5=T5))
-source_vbar = ColumnDataSource(data=dict( temeperature_name=temperature_name, color=temperature_colors))
+source_tempVbar = ColumnDataSource(data=dict( temeperature_name=temperature_name, color=temperature_colors))
 # vbar_top = [20, 0, 0]
 # source_vbar1 = ColumnDataSource(data=dict(vbar_top=vbar_top))
 
-
+source_temp0 = ColumnDataSource(data=dict(vec_Z = vec_Z, T1=T1, T2 = T2, T3 = T3, T4=T4, T5=T5))
+source_tempVbar = ColumnDataSource(data=dict( temeperature_name=temperature_name, color=temperature_colors))
 
 TOOLTIPS = [("Z","@vec_Z"), ("T1","@T1{0,0.000}"), ("T2","@T2{0,0.000}"), ("T3","@T3{0,0.000}"), ("T4","@T4{0,0.000}"), ("T5","@T5{0,0.000}")]
 TOOLS = "pan,undo,redo,reset,save,wheel_zoom,box_zoom"
 plot_conc = figure(plot_height=450, plot_width=550, tools=TOOLS, tooltips=TOOLTIPS,
-              title="Direct Air Capture", x_range=[t0, tf], y_range=[0, 15])
+              title="Direct Air Capture", x_range=[t0, tf], y_range=[-30, 20])
 plot_conc.line('vec_Z', 'T1', source=source_temp0, line_width=3, line_alpha=0.6, line_color='lightsteelblue',
                legend_label="T1")
 plot_conc.line('vec_Z', 'T2', source=source_temp0, line_width=3, line_alpha=0.6, line_color='deepskyblue',
@@ -217,47 +219,47 @@ plot_conc.legend.click_policy="hide"
 plot_conc.legend.background_fill_alpha = 0.5
 plot_conc.grid.grid_line_color = "silver"
 
-V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+")", value=V, start=2.02, end=8.0, step=0.02)
-r_slider = Slider(title="Radius of bed"+" (initial: "+str(r)+")", value=r, start=0.02, end=2.0, step=0.02)
-T_slider = Slider(title="initial temperature"+" (initial: "+str(T)+")", value=T, start=1, end=25, step=1)
-c_co2_0_slider = Slider(title="initial CO2 concentration"+" (initial: "+str(c_co2_0)+")", value=c_co2_0, start=1, end=5, step=1)
-episl_r_slider = Slider(title=""+" (initial: "+str(episl_r)+")", value=episl_r, start=1, end=5, step=1)
+V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+")", value=V, start=90, end=150, step=5)
+r_slider = Slider(title="Radius of bed"+" (initial: "+str(r)+")", value=r, start=1, end=7, step=0.02)
+T_slider = Slider(title="initial temperature"+" (initial: "+str(T)+")", value=T, start=-2, end=40, step=1)
+c_co2_0_slider = Slider(title="initial CO2 concentration"+" (initial: "+str(c_co2_0)+")", value=c_co2_0, start=0, end=5, step=0.2)
+episl_r_slider = Slider(title="Episl r"+" (initial: "+str(episl_r)+")", value=episl_r, start=1, end=5, step=1)
 v0_slider = Slider(title="Initial Velocity"+" (initial: "+str(v0)+")", value=v0, start=1, end=5, step=1)
 
-# def update_data(attrname, old, new):
+def update_data(attrname, old, new):
 
-#     # Get the current slider values
-#     V_temp= V_slider.value
-#     r_temp = r_slider.value
-#     T_temp = T_slider.value
-#     c_co2_0_temp = c_co2_0_slider.value
-#     episl_r_temp = episl_r_slider.value
-#     v0_temp = v0_slider.value
-#     # Generate the new curve
-#     vec_time = np.linspace(t0, tf, 12)  # vector for time
-#     params = [V_temp, r_temp, T_temp, c_co2_0_temp, episl_r_temp, v0_temp]
-#     soln = solve_ivp(deriv, (t0, tf), init_cond, args=(params,)) 
-#     T1_temp = soln.y[0]
-#     T2_temp = soln.y[3]
-#     T3_temp = soln.y[6]
-#     T4_temp = soln.y[9]
-#     T5_temp = soln.y[12]
-#     source_temp0.data =  dict(vec_time=vec_time,   T1_temp=T1_temp, T2_temp = T2_temp, T3_temp = T3_temp, T4_temp=T4_temp, T5_temp=T5_temp)
-#     # vbar_top_temp = [np.interp(time_temp, vec_time, int_vec_A), np.interp(time_temp, vec_time, int_vec_B),
-#     #                  np.interp(time_temp, vec_time, int_vec_C)]
-#     temperature_nameTemp = [T1_temp, T2_temp, T3_temp, T4_temp, T5_temp]
-#     temperature_colorsTemp = ['lightsteelblue','deepskyblue', 'dodgerblue', 'mediumblue', 'navy']
-#     source_vbar.data = dict(temperature_nameTemp=temperature_nameTemp, temperature_colorsTemp=temperature_colorsTemp)
+    # Get the current slider values
+    V_temp= V_slider.value
+    r_temp = r_slider.value
+    T_temp = T_slider.value
+    c_co2_0_temp = c_co2_0_slider.value
+    episl_r_temp = episl_r_slider.value
+    v0_temp = v0_slider.value
+    # Generate the new curve
+    vec_time = np.linspace(t0, tf, 12)  # vector for time
+    params = [V_temp, r_temp, T_temp, c_co2_0_temp, episl_r_temp, v0_temp]
+    soln = solve_ivp(deriv, (t0, tf), init_cond, args=(params,)) 
+    T1_temp = soln.y[0]
+    T2_temp = soln.y[3]
+    T3_temp = soln.y[6]
+    T4_temp = soln.y[9]
+    T5_temp = soln.y[12]
+    source_temp0.data =  dict(vec_time=vec_time,   T1_temp=T1_temp, T2_temp = T2_temp, T3_temp = T3_temp, T4_temp=T4_temp, T5_temp=T5_temp)
+    # vbar_top_temp = [np.interp(time_temp, vec_time, int_vec_A), np.interp(time_temp, vec_time, int_vec_B),
+    #                  np.interp(time_temp, vec_time, int_vec_C)]
+    temperature_nameTemp = [T1_temp, T2_temp, T3_temp, T4_temp, T5_temp]
+    temperature_colorsTemp = ['lightsteelblue','deepskyblue', 'dodgerblue', 'mediumblue', 'navy']
+    source_tempVbar.data = dict(temperature_nameTemp=temperature_nameTemp, temperature_colorsTemp=temperature_colorsTemp)
 
-# for w in [V_slider , r_slider, T_slider, c_co2_0_slider, episl_r_slider, v0_slider]:
-#     w.on_change('value', update_data)
+for w in [V_slider , r_slider, T_slider, c_co2_0_slider, episl_r_slider, v0_slider]:
+    w.on_change('value', update_data)
 
 
 inputs_reaction = column(V_slider , r_slider, T_slider, c_co2_0_slider, episl_r_slider, v0_slider)
-tab =Panel.pane.Bokeh(row(inputs_reaction, plot_conc))
-
-curdoc().add_root(tab)
+tab =Panel(child = row(inputs_reaction, plot_conc))
+tab1 = Panel(child = column(inputs_reaction, plot_conc))
+tabs = Tabs(tabs = [tab, tab1])
+curdoc().add_root(tabs)
 curdoc().title = "Direct Air Capture"
-
-
-
+# tabs = Tabs(tabs=[ tab1, tab ])
+# show(tabs)
