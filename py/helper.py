@@ -19,27 +19,27 @@ T0 = 353.15  # temeperature
 t_h0 = .37  # heterogeneity constant, in paper is denoted as t_h0
 apha = 0.33
 chi = 0.0
-q_s0 = 3.40
+q_s0 = 3.40 # qs_var = q_s0 = 3.4 due to chi = 0
 R = 8.314
 kT = 3.5 * (10 ** 3)  # calculate rA
-ρs = 880.0
+ps = 880.0
 deltH_co2 = 75.0  # calculate temeprature change
 
 # ------------------ For Equation 4 : Enegergy Ballance  --------------
-ρg = 1.87  # ?
+pg = 1.87  # ?
 h = 13.8
 Cp_g = 37.55  # J/molK
 Cp_s = 1580.0  # J/molK
 
 # ODE Part
 # Repetitive shortcut
-def ener_balan(v0, theta, deltZ):  # replace v0  * ρg* Cp_g / (theta * deltZ)
-    ener_balan_part1 = v0 * ρg * Cp_g
+def ener_balan(v0, theta, deltZ):  # replace v0  * pg* Cp_g / (theta * deltZ)
+    ener_balan_part1 = v0 * pg * Cp_g
     
     return (ener_balan_part1 / (theta * deltZ))
 
 def ener_balan2(episl_r):
-    ener_balan2 = (1 - episl_r) * ρs * deltH_co2
+    ener_balan2 = (1 - episl_r) * ps * deltH_co2
     return (ener_balan2)
 
 def ener_balan3(a_s, Tn):
@@ -54,8 +54,8 @@ def mass_balan(v0, episl_r, deltZ):
     # print(mass_balan)
     return (mass_balan)
 
-def masss_balan2(episl_r, ρs):
-    mass_balan2 = (1 - episl_r) * ρs
+def masss_balan2(episl_r, ps):
+    mass_balan2 = (1 - episl_r) * ps
     # print(mass_balan2)
     return (mass_balan2)
 # Equations are calclulated in order
@@ -78,40 +78,38 @@ def t_h(T):
 
 def q_s(T):
     q_s = q_s0 *2.71**(chi * (1 - T / T0))
-    print(q_s)
+    # print(q_s)
     return (q_s)
     # q_s = math(q_s0, (chi * (1 - T / T0)))
    
-    return (q_s)
+    # return (q_s)
 
 
 # Calculate rco2_n (not ode)
 # change it to q
-def R_co2(T, c_co2, q, b_var, t_var, qs_var):
+def R_co2(T, c_co2, q, b_var, t_var):
     # b_var = b(T)
     # t_var = t_h(T)
     # # print(t_var)
-    # qs_var = q_s(T)
-    # print(qs_var)
-    # # print(qs_var)
-    # a =qs_var
     # print(a)
     # print(q)
     # print(c_co2)
     rco2_term1 = R* T * c_co2 
-    # print(f"rco2_term1, {rco2_term1}.  ")
-    # print(f't_var, {t_var}')
-    rco2_term2 = 1 - ((q / qs_var) ** (t_var))
-    # rco2_term3 = (rco2_term1  * rco2_term2) ** (1/t_var)
-    # rco2_term4 = rco2_term3 - q / (b_var * qs_var)
+    # print(f"R * T * c_co2, {R * T * c_co2}.  ")
+    # print(f'((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var)), {((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var))}')
+    # print(f'R * T * c_co2 * ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var)), {R * T * c_co2 * ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var))}')
+    
+    rco2_term2 = 1 - ((q / 3.4) ** (1/t_var))
+    rco2_term3 = (rco2_term1  * rco2_term2) ** (1/t_var)
+    # rco2_term4 = rco2_term3 - q / (b_var * q_s0)
     # rco2_term5 = kT * rco2_term4
-
-
+    # term = kT * (R * T * c_co2 * ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var)) - q / (b_var * q_s0))
+    # print(f'term, {term}')
     # print(f"rco2_term1, {rco2_term1}.  ")
-    print(f"rco2_term2, {rco2_term2}. ")
+    # print(f"rco2_term2, {rco2_term2}. ")
     # print(f"(rco2_term3), {rco2_term3}. ")
     # print(f"(rco2_term4), {rco2_term4}. ")
-    r_co2 = kT * (R * T * c_co2 * ((1 - ((q / qs_var) ** (t_var))) ** (1 / t_var)) - q / (b_var * qs_var))
+    r_co2 = kT * (R * T * c_co2 * ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var)) - q / (b_var * q_s0))
     # print(f"r_co2",{r_co2})
 
     # print(f"b_var * qs_var, {rco2_term5}.")
@@ -119,56 +117,53 @@ def R_co2(T, c_co2, q, b_var, t_var, qs_var):
 
 
 def deriv(t, y, params):
-    T_n, co2_n, q_n= y # the rest of 12 vars a_n are not used, only for the success of solve_ivp   , a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12 
+    T_n, co2_n, q_n, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12 = y # the rest of 12 vars a_n are not used, only for the success of solve_ivp   , 
     V, r, T, c_co2_0, episl_r, v0 = params
     ###############   -----  Parameters depend on input  -----  ###############
     L = V / (math.pi * (r ** 2))
     deltZ = L / 5.0  # 5 boxes in total
     a_s = deltZ / r
-    theta = (1 - episl_r) * ρs * Cp_s + episl_r * ρg * Cp_g
+    theta = (1 - episl_r) * ps * Cp_s + episl_r * pg * Cp_g
 
     b_var = b(T)
     t_var = t_h(T)
-    # print(t_var)
-    qs_var = q_s(T)
-
    # T_n, co2_n, q_n, T_n2, co2_n2, q_n2, T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4, T_n5, co2_n5, q_n5 == y
     # rco2_ first, rate of generation
     T1 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T0 + ener_balan2(episl_r) * (
-        R_co2(T_n, co2_n, q_n, b_var, t_var, qs_var)) + ener_balan3(a_s, T_n)
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) + ener_balan3(a_s, T_n)
     # print(T1)
     co2_1 = -mass_balan(v0, episl_r, deltZ) * co2_n + mass_balan(v0, episl_r, deltZ) * c_co2_0 - (
-        R_co2(T_n, co2_n, q_n,  b_var, t_var, qs_var)) * masss_balan2(episl_r, ρs)
-    q_1 = R_co2(T_n, co2_n, q_n,  b_var, t_var, qs_var)
+        R_co2(T_n, co2_n, q_n,  b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_1 = R_co2(T_n, co2_n, q_n,  b_var, t_var)
 
-    # T2 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T1 + ener_balan2(episl_r) * (
-    #     R_co2(T_n, co2_n, q_n)) + ener_balan3(a_s,  T_n)
-    # co2_2 = -mass_balan(episl_r, deltZ) * co2_n + mass_balan(episl_r, deltZ) * co2_1 - (
-    #     R_co2(T_n, co2_n, q_n)) * masss_balan2(episl_r, ρs)
-    # q_2 = R_co2(T_n, co2_n, q_n)
+    T2 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T1 + ener_balan2(episl_r) * (
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) + ener_balan3(a_s,  T_n)
+    co2_2 = -mass_balan(v0,episl_r, deltZ) * co2_n + mass_balan(v0,episl_r, deltZ) * co2_1 - (
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_2 = R_co2(T_n, co2_n, q_n, b_var, t_var)
 
-    # T3 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T2 + ener_balan2(episl_r) * (
-    #     R_co2(T_n, co2_n, q_n)) + ener_balan3(a_s, T_n)
-    # co2_3 = -mass_balan(episl_r, deltZ) * co2_n + mass_balan(episl_r, deltZ) * co2_2 - (
-    #     R_co2(T_n, co2_n, q_n)) * masss_balan2(episl_r, ρs)
-    # q_3 = R_co2(T_n, co2_n, q_n)
+    T3 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T2 + ener_balan2(episl_r) * (
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) + ener_balan3(a_s, T_n)
+    co2_3 = -mass_balan(v0,episl_r, deltZ) * co2_n + mass_balan(v0,episl_r, deltZ) * co2_2 - (
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_3 = R_co2(T_n, co2_n, q_n, b_var, t_var)
 
-    # T4 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T3 + ener_balan2(episl_r) * (
-    #     R_co2(T_n, co2_n, q_n)) + ener_balan3(a_s,  T_n)
-    # co2_4 = -mass_balan(episl_r, deltZ) * co2_n + mass_balan(episl_r, deltZ) * co2_3 - (
-    #     R_co2(T_n, co2_n, q_n)) * masss_balan2(episl_r, ρs)
-    # q_4 = R_co2(T_n, co2_n, q_n)
+    T4 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T3 + ener_balan2(episl_r) * (
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) + ener_balan3(a_s,  T_n)
+    co2_4 = -mass_balan(v0,episl_r, deltZ) * co2_n + mass_balan(v0,episl_r, deltZ) * co2_3 - (
+        R_co2(T_n, co2_n, q_n,b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_4 = R_co2(T_n, co2_n, q_n, b_var, t_var)
 
-    # T5 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T4 + ener_balan2(episl_r) * (
-    #     R_co2(T_n, co2_n, q_n)) + ener_balan3(a_s,  T_n)
-    # co2_5 = -mass_balan(episl_r, deltZ) * co2_n + mass_balan(episl_r, deltZ) * co2_4 - (
-    #     R_co2(T_n, co2_n, q_n)) * masss_balan2(episl_r, ρs)
-    # q_5 = R_co2(T_n, co2_n, q_n)
+    T5 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T4 + ener_balan2(episl_r) * (
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) + ener_balan3(a_s,  T_n)
+    co2_5 = -mass_balan(v0,episl_r, deltZ) * co2_n + mass_balan(v0,episl_r, deltZ) * co2_4 - (
+        R_co2(T_n, co2_n, q_n, b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_5 = R_co2(T_n, co2_n, q_n, b_var, t_var)
 
     # result = np.array([T1, T2, T3, T4, T5, co2_1, co2_2, co2_3, co2_4, co2_5, q_1, q_2, q_3, q_4, q_5]).reshape(-1, 1)
 
-    return [T1, co2_1, q_1]
-    # , T2, co2_2, q_2, T3, co2_3, q_3, T4, co2_4, q_4, T5, co2_5, q_5    
+    return [T1, co2_1, q_1, T2, co2_2, q_2, T3, co2_3, q_3, T4, co2_4, q_4, T5, co2_5, q_5 ]
+    #  
 
 def deriv1(t, y, params):
     T_n, co2_n, q_n, T_n2, co2_n2, q_n2,T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4,T_n5, co2_n5, q_n5 = y # the rest of 12 vars a_n are not used, only for the success of solve_ivp
@@ -177,44 +172,43 @@ def deriv1(t, y, params):
     L = V / (math.pi * (r ** 2))
     deltZ = L / 5.0  # 5 boxes in total
     a_s = deltZ / r
-    theta = (1 - episl_r) * ρs * Cp_s + episl_r * ρg * Cp_g
+    theta = (1 - episl_r) * ps * Cp_s + episl_r * pg * Cp_g
 
     b_var = b(T)
     t_var = t_h(T)
     # print(t_var)
-    qs_var = q_s(T)
 
    # T_n, co2_n, q_n, T_n2, co2_n2, q_n2, T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4, T_n5, co2_n5, q_n5 == y
     # rco2_ first, rate of generation
     T1 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T0 + ener_balan2(episl_r) * (
-        R_co2(T_n, co2_n, q_n,  b_var, t_var, qs_var)) + ener_balan3(a_s, T_n)
+        R_co2(T_n, co2_n, q_n,  b_var, t_var)) + ener_balan3(a_s, T_n)
     co2_1 = -mass_balan(v0, episl_r, deltZ) * co2_n + mass_balan(v0, episl_r, deltZ) * c_co2_0 - (
-        R_co2(T_n, co2_n, q_n,  b_var, t_var, qs_var)) * masss_balan2(episl_r, ρs)
-    q_1 = R_co2(T_n, co2_n, q_n,  b_var, t_var, qs_var)
+        R_co2(T_n, co2_n, q_n,  b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_1 = R_co2(T_n, co2_n, q_n,  b_var, t_var)
 
     T2 = -ener_balan(v0, theta, deltZ) * T_n2 + ener_balan(v0, theta, deltZ) * T1 + ener_balan2(episl_r) * (
-        R_co2(T_n2, co2_n2, q_n2,  b_var, t_var, qs_var)) + ener_balan3(a_s,  T_n2)
+        R_co2(T_n2, co2_n2, q_n2,  b_var, t_var)) + ener_balan3(a_s,  T_n2)
     co2_2 = -mass_balan(v0, episl_r, deltZ) * co2_n2 + mass_balan(v0, episl_r, deltZ) * co2_1 - (
-        R_co2(T_n2, co2_n2, q_n2,  b_var, t_var, qs_var)) * masss_balan2(episl_r, ρs)
-    q_2 = R_co2(T_n2, co2_n2, q_n2,  b_var, t_var, qs_var)
+        R_co2(T_n2, co2_n2, q_n2,  b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_2 = R_co2(T_n2, co2_n2, q_n2,  b_var, t_var)
 
     T3 = -ener_balan(v0, theta, deltZ) * T_n3 + ener_balan(v0, theta, deltZ) * T2 + ener_balan2(episl_r) * (
-        R_co2(T_n3, co2_n3, q_n3,  b_var, t_var, qs_var)) + ener_balan3(a_s, T_n3)
+        R_co2(T_n3, co2_n3, q_n3,  b_var, t_var)) + ener_balan3(a_s, T_n3)
     co2_3 = -mass_balan(v0, episl_r, deltZ) * co2_n3 + mass_balan(v0, episl_r, deltZ) * co2_2 - (
-        R_co2(T_n3, co2_n3, q_n3,  b_var, t_var, qs_var)) * masss_balan2(episl_r, ρs)
-    q_3 = R_co2(T_n3, co2_n3, q_n3,  b_var, t_var, qs_var)
+        R_co2(T_n3, co2_n3, q_n3,  b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_3 = R_co2(T_n3, co2_n3, q_n3,  b_var, t_var)
 
     T4 = -ener_balan(v0, theta, deltZ) * T_n4 + ener_balan(v0, theta, deltZ) * T3 + ener_balan2(episl_r) * (
-        R_co2(T_n4, co2_n4, q_n4,  b_var, t_var, qs_var)) + ener_balan3(a_s,  T_n4)
+        R_co2(T_n4, co2_n4, q_n4,  b_var, t_var)) + ener_balan3(a_s,  T_n4)
     co2_4 = -mass_balan(v0, episl_r, deltZ) * co2_n4 + mass_balan(v0, episl_r, deltZ) * co2_3 - (
-        R_co2(T_n4, co2_n4, q_n4,  b_var, t_var, qs_var)) * masss_balan2(episl_r, ρs)
-    q_4 = R_co2(T_n4, co2_n4, q_n4,  b_var, t_var, qs_var)
+        R_co2(T_n4, co2_n4, q_n4,  b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_4 = R_co2(T_n4, co2_n4, q_n4,  b_var, t_var)
 
     T5 = -ener_balan(v0, theta, deltZ) * T_n5 + ener_balan(v0, theta, deltZ) * T4 + ener_balan2(episl_r) * (
-        R_co2(T_n5, co2_n5, q_n5,  b_var, t_var, qs_var)) + ener_balan3(a_s,  T_n5)
+        R_co2(T_n5, co2_n5, q_n5,  b_var, t_var)) + ener_balan3(a_s,  T_n5)
     co2_5 = -mass_balan(v0, episl_r, deltZ) * co2_n5 + mass_balan(v0, episl_r, deltZ) * co2_4 - (
-        R_co2(T_n5, co2_n5, q_n5,  b_var, t_var, qs_var)) * masss_balan2(episl_r, ρs)
-    q_5 = R_co2(T_n5, co2_n5, q_n5,  b_var, t_var, qs_var)
+        R_co2(T_n5, co2_n5, q_n5,  b_var, t_var)) * masss_balan2(episl_r, ps)
+    q_5 = R_co2(T_n5, co2_n5, q_n5,  b_var, t_var)
 
     # result = np.array([T1, T2, T3, T4, T5, co2_1, co2_2, co2_3, co2_4, co2_5, q_1, q_2, q_3, q_4, q_5]).reshape(-1, 1)
 
@@ -224,21 +218,21 @@ def deriv1(t, y, params):
 ###############    User generated - Slider initial value   ###############
 V = 100.0  # volume
 r = 5.0
-T = 393.0 # +273
+T = 293.0 # +273
 c_co2_0 = 5.0  # concentration
 episl_r = 0.3  # void
 v0 = 2.0  # initial vilocity
 
 t0, tf = 0.0, 10.0
 ############# initial condition
-init_cond = [20.000, 0.000, 0.000]
-# init_cond = [20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000]
+# init_cond = [20.000, 0.000, 0.000]
+init_cond = [20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000]
 # ,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000
 # t_span = np.linspace(t0, tf, N)
 # soln = odeint(deriv, init_cond, t_span)
 params = [V, r, T, c_co2_0, episl_r, v0]
 soln = solve_ivp(deriv, (t0, tf), init_cond, args=(params,))  # init_cond = (T, c_co2_0, q0)
-# print(soln)
+print(soln)
 # Equation 3
 # dq/dt = r_co2
 
