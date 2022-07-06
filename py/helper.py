@@ -265,14 +265,14 @@ vec_time = np.linspace(t0, tf, T1.size)
 vec_Z = np.linspace(0,  V / (math.pi * (r ** 2)), 5)
 box_Z = ['dz1', 'dz2', 'dz3', 'dz4', 'dz5']
 vbar_top = [20, 20, 20, 20, 20]
+tem = [T1, T2, T3, T4, T5]
 
-source_vbar = ColumnDataSource(data=dict(temperature_name=temperature_name,  temperature_colors=temperature_colors, vbar_top= vbar_top))
-source_temp0 = ColumnDataSource(data=dict(vec_Z = box_Z, T1=T1, T2 = T2, T3 = T3, T4=T4, T5=T5))
 
+source_temp0 = ColumnDataSource(data=dict(vec_Z = vec_time, T1=T1, T2 = T2, T3 = T3, T4=T4, T5=T5))
 TOOLTIPS = [("B","@vec_Z"), ("T1","@T1{0,0.000}"), ("T2","@T2{0,0.000}"), ("T3","@T3{0,0.000}"), ("T4","@T4{0,0.000}"), ("T5","@T5{0,0.000}")]
 TOOLS = "pan,undo,redo,reset,save,wheel_zoom,box_zoom"
 plot_conc = figure(plot_height=450, plot_width=550, tools=TOOLS, tooltips=TOOLTIPS,
-              title="Direct Air Capture", x_range=[t0, tf], y_range=[0, 20])
+              title="Direct Air Capture", x_range=[t0, tf], y_range=[19.5, 21])
 plot_conc.line('vec_Z', 'T1', source=source_temp0, line_width=3, line_alpha=0.6, line_color='lightsteelblue',
                legend_label="T1")
 plot_conc.line('vec_Z', 'T2', source=source_temp0, line_width=3, line_alpha=0.6, line_color='deepskyblue',
@@ -283,7 +283,6 @@ plot_conc.line('vec_Z', 'T4', source=source_temp0, line_width=3, line_alpha=0.6,
                legend_label="T4")
 plot_conc.line('vec_Z', 'T5', source=source_temp0, line_width=3, line_alpha=0.6, line_color='navy',
                legend_label="T5")
-
 plot_conc.xaxis.axis_label = "B"
 plot_conc.yaxis.axis_label = "Temeprarture"
 plot_conc.legend.location = "top_left"
@@ -291,10 +290,11 @@ plot_conc.legend.click_policy="hide"
 plot_conc.legend.background_fill_alpha = 0.5
 plot_conc.grid.grid_line_color = "silver"
 
-TOOLTIPS_vbar = [("temperature_name","@temperature_name"), ("Temperature","@vbar_top{0,0.000}")]
+source_vbar = ColumnDataSource(data=dict(temperature_name=temperature_name,  temperature_colors=temperature_colors, vbar_top= vbar_top))
+TOOLTIPS_vbar = [("Temperature_Name","@temperature_name"), ("Temperature","@vbar_top{0,0.000}")]
 TOOLS = "pan,undo,redo,reset,save,wheel_zoom,box_zoom"
 
-plot_vbar = figure(plot_height=450, plot_width=550, tools=TOOLS, tooltips=TOOLTIPS_vbar, x_range=box_Z,
+plot_vbar = figure(plot_height=450, plot_width=550, tools=TOOLS, tooltips=TOOLTIPS_vbar, x_range=temperature_name,
                    y_range=[0, 20.25], title="Temperature changes over boxes by time slider")
 plot_vbar.vbar(x='temperature_name', top = "vbar_top",source=source_vbar, bottom=0.0, width=0.5, alpha=0.6, color="temperature_colors",
                legend_field= "temperature_name")
@@ -305,9 +305,9 @@ plot_vbar.legend.orientation = "horizontal"
 plot_vbar.legend.location = "top_center"
 
 
-V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+")", value=V, start=90, end=150, step=5)
-r_slider = Slider(title="Radius of bed"+" (initial: "+str(r)+")", value=r, start=1, end=7, step=0.02)
-T_slider = Slider(title="initial temperature"+" (initial: "+str(T)+")", value=T, start=-2, end=40, step=1)
+V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+")", value=V, start=98, end=105, step=1)
+r_slider = Slider(title="Radius of bed"+" (initial: "+str(r)+")", value=r, start=4, end=6, step=0.02)
+T_slider = Slider(title="initial temperature"+" (initial: "+str(T)+")", value=T, start=293, end=393, step=1)
 c_co2_0_slider = Slider(title="initial CO2 concentration"+" (initial: "+str(c_co2_0)+")", value=c_co2_0, start=0, end=5, step=0.2)
 episl_r_slider = Slider(title="Episl r"+" (initial: "+str(episl_r)+")", value=episl_r, start=1, end=5, step=1)
 v0_slider = Slider(title="Initial Velocity"+" (initial: "+str(v0)+")", value=v0, start=1, end=5, step=1)
@@ -340,8 +340,8 @@ def update_data(attrname, old, new):
     episl_r_temp = episl_r_slider.value
     v0_temp = v0_slider.value
     time_temp = slider_time.value
+
     # Generate the new curve
-    
     params = [V_temp, r_temp, T_temp, c_co2_0_temp, episl_r_temp, v0_temp]
     soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,)) 
     vec_time = np.linspace(t0, tf, soln.y[0].size)  # vector for time
@@ -374,11 +374,10 @@ animate_button = Button(label='► Play', width=50)
 animate_button.on_event('button_click', animate)
 
 inputs_reaction = column(V_slider , r_slider, T_slider, c_co2_0_slider, episl_r_slider, v0_slider)
-
 inputs_time = column(animate_button, slider_time )
 
-tab1 =Panel(child=row(inputs_reaction, plot_conc, column(plot_vbar, inputs_time, height=450)), title="Desktop")
-tab2 =Panel(child=column(inputs_reaction, plot_conc, column(plot_vbar, inputs_time, height=475)), title="Mobile")
+tab1 =Panel(child=row(inputs_reaction, plot_conc,  column(plot_vbar, inputs_time, height=450)), title="Desktop")
+tab2 =Panel(child=column(inputs_reaction, plot_conc,  column(plot_vbar, inputs_time, height=475)), title="Mobile")
 tabs = Tabs(tabs = [tab1, tab2])
 curdoc().add_root(tabs)
 curdoc().title = "Direct Air Capture"
