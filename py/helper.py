@@ -17,26 +17,26 @@ import numpy as np
 
 # --------------------- Static Parameters    --------------------- #
 
-b0 = 93.0 * (10 ** (-5))
-deltH_0 = 95.3  # calculate b
+b0 = 9.3 * math.exp(-10)  # 93      unit : 1/bars
+deltH_0 = 95.3  # j/mol 
 Tw = -5.0  # room temperature
 T0 = 353.15  # temeperature in kelvin
 t_h0 = .37  # heterogeneity constant
 apha = 0.33
 chi = 0.0
 q_s0 = 3.40 # qs_var = q_s0 = 3.4 due to chi = 0
-R = 8.314* (10**3) # Universal gas constant - J/mol-K
+R = 8.314* (10**-5) # Universal gas constant - J/mol-K
 Rg = .0821 # Universal gas constant in l-atm/mol/K
 kT0 = 3.5 * (10 ** -2)  # used to compute kT for r_CO2... in mol/Kg-bar-sec
 EaCO2 = 15200 # activation for KT -- J/mol
 ps = 880.0
-deltH_co2 = 75.0  # calculate temeprature change
+deltH_co2 = 75000.0  # calculate temeprature change
 
 # ------------------ For Equation : Enegergy Ballance  -------------- #
 pg = 1.87  # 
 h = 13.8
-Cp_g = 37.55  # J/molK
-Cp_s = 1580.0  # J/molK
+Cp_g = 846  # J/kgK
+Cp_s = 1500.0  # J/kgK
 
 # ------------------ ODE Repetitive Shortcut -------------- #
 
@@ -70,7 +70,7 @@ def masss_balan2(episl_r, ps):
 def b(T): # will be called inside deriv
     # print(T)
     b = b0 *math.exp(((deltH_0 / (R * T0)) * (T0 / T - 1)))
-  
+    print(f'b, {b}')
     return b
 
 def t_h(T): # will be call inside  deriv
@@ -115,7 +115,7 @@ def R_co2(T, c_co2, q, b_var, t_var):
     # print(f"(rco2_term3), {rco2_term3}. ")
     # print(f"(rco2_term4), {rco2_term4}. ")
     # Note that R_CO2 is in mol/Kg-s... kT is in mol/Kg-bar-sec and so R*T*CO2 needs to be in units of pressure (bar). Therefore, R should be in lit-atm/mol-K, T in K, and C_CO2 should be in mol/lit 
-    r_co2 = kT0 * np.exp(-EaCO2/R*T) * (Rg * T * c_co2 * ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var)) - q / (b_var * q_s0))
+    r_co2 = kT0 * math.exp(-EaCO2/R*T) * (Rg * T * c_co2 * ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var)) - q / (b_var * q_s0))
     # print(f"r_co2",{r_co2})
 
     # print(f"b_var * qs_var, {rco2_term5}.")
@@ -189,10 +189,10 @@ def deriv1(t, y, params):
     a_s = 2 / r
     theta = (1 - episl_r) * ps * Cp_s + episl_r * pg * Cp_g
 
-    b_var = b(T)
+    
     t_var = t_h(T)
     # print(t_var)
-
+    b_var = b(T)
    # T_n, co2_n, q_n, T_n2, co2_n2, q_n2, T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4, T_n5, co2_n5, q_n5 == y
     # rco2_ first, rate of generation
     T1 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T0 + ener_balan2(episl_r) * (
@@ -233,14 +233,14 @@ def deriv1(t, y, params):
 V = 100.0  # volume
 r = 5.0 ### no need 
 T = 293.0 # +273 ambrient temperature
-c_co2_0 = 5.0  # concentration 
+c_co2_0 = 5.0*(10**2) # mol/m^3 
 episl_r = 0.3  # void
 v0 = 2.0  # initial vilocity
 # air humidity 
 # no radius and length, nonly need V, july 6th
 
 # ------------------ Initial Conditions to set up solve_ivp -------------- #
-t0, tf = 0.0, 10.0
+t0, tf = 0.0, 10800.0 # 3hrs
 
 # init_cond = [20.000, 0.000, 0.000]
 init_cond = [20.000, 0.000, 0.000,20.000, 0.000, 0.000, 20.000, 0.000, 0.000, 20.000, 0.000, 0.000, 20.000, 0.000, 0.000]
@@ -384,5 +384,6 @@ q1dot, q2dot, q3dot, q4dot, q5dot = soln.y[2], soln.y[5], soln.y[8], soln.y[11],
 # curdoc().title = "Direct Air Capture"
 # # tabs = Tabs(tabs=[ tab1, tab ])
 # # show(tabs)
+
 
 
