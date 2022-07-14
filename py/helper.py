@@ -19,7 +19,7 @@ import numpy as np
 
 b0 = 93 * (10**-5)  # 93      unit : 1/bars
 deltH_0 = 95300  #               unit: j/mol 
-Tw = 278.0  #  room temperature  unit: kelvin
+Tw= T_in = 298.0  #  room temperature  unit: kelvin
 T0 = 353.15  # temeperature in   unit: kelvin
 t_h0 = .37  # heterogeneity constant 
 apha = 0.33
@@ -100,7 +100,7 @@ def R_co2(T, c_co2, q, b_var, t_var):
     if q<0:
         print(f"q in rco2", {q})
         print("alert, q is nagative")
-    rco2_2 = ((1 - (abs(q / q_s0) ** (t_var))) ** (1 / t_var))
+    rco2_2 = ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var))
     # rco2_2 = ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var))
     # print(f"rco2_2", {rco2_2})abs
     rco2_3 = q / (b_var * q_s0)
@@ -143,7 +143,7 @@ def deriv1(t, y, params):
     b_var = b(T)
    # T_n, co2_n, q_n, T_n2, co2_n2, q_n2, T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4, T_n5, co2_n5, q_n5 == y
     # rco2_ first, rate of generation
-    T1 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T0 + ener_balan2(episl_r) * (
+    T1 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T_in + ener_balan2(episl_r) * (
         R_co2(T_n, co2_n, q_n,  b_var, t_var))/theta + ener_balan3(a_s, T_n)/theta
     # print(f"T1", {T1})
     co2_1dot = -mass_balan(v0, episl_r, deltZ) * co2_n + mass_balan(v0, episl_r, deltZ) * c_co2_0 - (
@@ -193,15 +193,14 @@ volumetric_flow = 5 # m^3/s
 
 # ------------------ Initial Conditions to set up solve_ivp -------------- #
 t0, tf = 0.0, 100.0 # 3hrs
-co2_initial = 0
+co2_initial = 0.016
 q_init_cond = 0
-# init_cond = [20.000, 0.000, 0.000]
 init_cond = [T, co2_initial, q_init_cond, T, co2_initial,q_init_cond, T, co2_initial, q_init_cond, T, co2_initial, q_init_cond, T,co2_initial, q_init_cond]
 # ,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000
 params = [V, T, c_co2_0, episl_r, volumetric_flow]
 tspan = np.linspace(t0, tf, 5)
-soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,), t_eval = tspan, method = "BDF", rtol = 1e-5, atol = 1e-8)  # init_cond = (T, c_co2_0, q0)
-# soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,), method = "Radau", rtol = 1e-5, atol = 1e-8)  # init_cond = (T, c_co2_0, q0)
+soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,))  # init_cond = (T, c_co2_0, q0)
+# soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,), method = "BDF", rtol = 1e-5, atol = 1e-8)  # init_cond = (T, c_co2_0, q0)
 # deriv1([t0, tf], )
 print(soln)
 # Equation 3
