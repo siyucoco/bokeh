@@ -97,9 +97,9 @@ def R_co2(T, c_co2, q, b_var, t_var):
     rco2_1 = R_constant * T * c_co2 
     # if t_var <0:
     #     print("alert, t_var is negative")
-    if q<0:
-        print(f"q in rco2", {q})
-        print("alert, q is nagative")
+    # if q<0:
+    #     print(f"q in rco2", {q})
+    #     print("alert, q is nagative")
     rco2_2 = ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var))
     # rco2_2 = ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var))
     # print(f"rco2_2", {rco2_2})abs
@@ -107,7 +107,7 @@ def R_co2(T, c_co2, q, b_var, t_var):
     # print(f"rco2_3", {rco2_3})
     # r_co2_part1 = rco2_1    
     rco2 = kn * (rco2_1 * rco2_2 - rco2_3) 
-    print(f"rco2", {rco2})
+    # print(f"rco2", {rco2})
     # r_co2_part1 =(Rg * T * c_co2 * ((1 - ((q / q_s0) ** (t_var))) ** (1 / t_var)) - q / (b_var * q_s0))
     # print(f"rco2_part1",{r_co2_part1})
     # r_co2 = kn *r_co2_part1
@@ -145,7 +145,7 @@ def deriv1(t, y, params):
     # rco2_ first, rate of generation
     T1 = -ener_balan(v0, theta, deltZ) * T_n + ener_balan(v0, theta, deltZ) * T_in + ener_balan2(episl_r) * (
         R_co2(T_n, co2_n, q_n,  b_var, t_var))/theta + ener_balan3(a_s, T_n)/theta
-    # print(f"T1", {T1})
+   
     co2_1dot = -mass_balan(v0, episl_r, deltZ) * co2_n + mass_balan(v0, episl_r, deltZ) * c_co2_0 - (
         R_co2(T_n, co2_n, q_n,  b_var, t_var)) * masss_balan2(episl_r, ps)/episl_r
     q1dot = R_co2(T_n, co2_n, q_n,  b_var, t_var)
@@ -202,7 +202,7 @@ tspan = np.linspace(t0, tf, 5)
 soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,), t_eval = tspan, method = "BDF", rtol = 1e-5, atol = 1e-8)  # init_cond = (T, c_co2_0, q0)
 # soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,), method = "BDF", rtol = 1e-5, atol = 1e-8)  # init_cond = (T, c_co2_0, q0)
 # deriv1([t0, tf], )
-print(soln)
+# print(soln)
 # Equation 3
 # dq/dt = r_co2
 
@@ -211,12 +211,16 @@ print(soln)
 # need to know when it reaches to L, then stop the whole operation
 # time when it reaches the breakthrough and desorption 
 
-T1, T2, T3, T4, T5 = soln.y[0], soln.y[3], soln.y[6], soln.y[9], soln.y[12]
+dotT1, dotT2, dotT3, dotT4, dotT5 = soln.y[0], soln.y[3], soln.y[6], soln.y[9], soln.y[12]
 co2_1dot, co2_2dot, co2_3dot, co2_4dot, co2_5dot = soln.y[1], soln.y[4], soln.y[7], soln.y[10], soln.y[13]
 q1dot, q2dot, q3dot, q4dot, q5dot = soln.y[2], soln.y[5], soln.y[8], soln.y[11], soln.y[14]
 
 
-
+T1 = [dotT1[0], dotT2[0], dotT3[0], dotT4[0], dotT5[0] ]
+T2 = [dotT1[1], dotT2[1], dotT3[1], dotT4[1], dotT5[1] ]
+T3 = [dotT1[2], dotT2[2], dotT3[2], dotT4[2], dotT5[2] ]
+T4 = [dotT1[3], dotT2[3], dotT3[3], dotT4[3], dotT5[3] ]
+T5 = [dotT1[4], dotT2[4], dotT3[4], dotT4[4], dotT5[4] ]
 
 temperature_name = ['T1', 'T2', 'T3', 'T4', 'T5']
 temperature_colors = ['lightsteelblue','deepskyblue', 'dodgerblue', 'mediumblue', 'navy']
@@ -227,6 +231,8 @@ box_Z = ['dz1', 'dz2', 'dz3', 'dz4', 'dz5']
 vbar_top = [T, T, T, T, T]
 tem = [T1, T2, T3, T4, T5]
 
+
+
 # # co2_name = [co2_1dot, co2_2dot, co2_3dot, co2_4dot, co2_5dot]
 # # co2_colors = ['darkseagreen','mediumseagreen', 'seagreen', 'green', 'drakolivegreen']
 # # q_name = [q1dot, q2dot, q3dot, q4dot, q5dot]
@@ -236,7 +242,7 @@ source_temp0 = ColumnDataSource(data=dict(vec_Z = vec_Z, T1=T1, T2 = T2, T3 = T3
 TOOLTIPS = [("deltaZ","@vec_Z"), ("T1","@T1{0,0.000}"), ("T2","@T2{0,0.000}"), ("T3","@T3{0,0.000}"), ("T4","@T4{0,0.000}"), ("T5","@T5{0,0.000}")]
 TOOLS = "pan,undo,redo,reset,save,wheel_zoom,box_zoom"
 plot_conc = figure(plot_height=450, plot_width=550, tools=TOOLS, tooltips=TOOLTIPS,
-              title="Direct Air Capture", x_range=[t0, tf], y_range=[220, 350])
+              title="Direct Air Capture", x_range=[0, 6], y_range=[40, 320])
 plot_conc.line('vec_Z', 'T1', source=source_temp0, line_width=3, line_alpha=0.6, line_color='lightsteelblue',
                legend_label="T1")
 plot_conc.line('vec_Z', 'T2', source=source_temp0, line_width=3, line_alpha=0.6, line_color='deepskyblue',
@@ -311,11 +317,16 @@ def update_data(attrname, old, new):
     soln = solve_ivp(deriv1, (t0, tf), init_cond, args=(params,)) 
     # vec_Z = np.linspace(0,  V / (math.pi * (r ** 2)), 5)
     vec_time = np.linspace(t0, tf, soln.y[0].size)  # vector for time
-    T1_temp = soln.y[0]
-    T2_temp = soln.y[3]
-    T3_temp = soln.y[6]
-    T4_temp = soln.y[9]
-    T5_temp = soln.y[12]
+    dotT1_temp = soln.y[0]
+    dotT2_temp = soln.y[3]
+    dotT3_temp = soln.y[6]
+    dotT4_temp = soln.y[9]
+    dotT5_temp = soln.y[12]
+    T1_temp = [dotT1_temp[0], dotT2_temp[0], dotT3_temp[0], dotT4_temp[0], dotT5_temp[0] ]
+    T2_temp = [dotT1_temp[1], dotT2_temp[1], dotT3_temp[1], dotT4_temp[1], dotT5_temp[1] ]
+    T3_temp = [dotT1_temp[2], dotT2_temp[2], dotT3_temp[2], dotT4_temp[2], dotT5_temp[2] ]
+    T4_temp = [dotT1_temp[3], dotT2_temp[3], dotT3_temp[3], dotT4_temp[3], dotT5_temp[3] ]
+    T5_temp = [dotT1_temp[4], dotT2_temp[4], dotT3_temp[4], dotT4_temp[4], dotT5_temp[4] ]
     source_temp0.data =  dict(vec_Z=vec_Z,   T1=T1_temp, T2 = T2_temp, T3 = T3_temp, T4=T4_temp, T5=T5_temp)
     vbar_top_temp = [np.interp(time_temp, vec_time, T1_temp), np.interp(time_temp, vec_time, T2_temp),
                      np.interp(time_temp, vec_time, T3_temp), np.interp(time_temp, vec_time, T4_temp), np.interp(time_temp, vec_time, T5_temp)]
