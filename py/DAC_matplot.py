@@ -23,8 +23,6 @@ import numpy as np
 
 b0 = 93 * (10**-5)  # 93      unit : 1/bars
 deltH_0 = 95300  #               unit: j/mol 
-Tw = 293.0 # water temperature, utility
-T_in = 298.0  #   ambient temperature,  also inlet temperature, in kelvin  unit: kelvin, depends on location
 T0 = 353.15  # reference temeperature to be used in the Toth isotherm   unit: kelvin
 t_h0 = .37  # heterogeneity constant 
 apha = 0.33
@@ -117,14 +115,15 @@ def R_co2(T, c_co2, q):
                   params = [V, r, T, c_co2_0, episl_r, v0]
     
 """
-
+LoverR = 2.5/20 # Straight from the paper - shallow bed, so L << R
 def deriv1(t, y, params):
     T_n, co2_n, q_n, T_n2, co2_n2, q_n2,T_n3, co2_n3, q_n3, T_n4, co2_n4, q_n4,T_n5, co2_n5, q_n5 = y # the rest of 12 vars a_n are not used, only for the success of solve_ivp
-    V, T, c_co2_0, episl_r, volumetric_flow = params
+    V, T_in, c_co2_0, episl_r, volumetric_flow, Tw = params
 
     ###############   -----  Parameters depend on input  -----  ###############
-    LoverR = 2.5/20 # Straight from the paper - shallow bed, so L << R
+    # LoverR = 2.5/20 # Straight from the paper - shallow bed, so L << R
     r = cube(V/(LoverR*math.pi))
+    print(f"r",{r})
     v0 = volumetric_flow / (math.pi *r*r )
     L = V / (math.pi * (r ** 2))
     deltZ = L / 5.0  # 5 boxes in total
@@ -178,21 +177,21 @@ def deriv1(t, y, params):
 
 # ------------------ User generated - Slider initial value -------------- #
 V = .003  # volume
-T = 298.0 # +273 ambrient temperature
+T_in= 298.0 # +273 ambrient temperature, T_in ambient temperature,  also inlet temperature, in kelvin  unit: kelvin, depends on location
 c_co2_0 = .016349 # mol/m^3    
 episl_r = 0.3  # void
 volumetric_flow = .01 # m^3/s
-
+Tw = 293.0 # water temperature, utility
 # air humidity 
 # no radius and length, nonly nr *reed V, july 6th
 
 # ------------------ Initial Conditions to set up solve_ivp -------------- #
-t0, tf = 0.0, 21600.0 # 6hrs
+t0, tf = 0.0, 43200.0 # 12hrs
 co2_initial = 0
 q_init_cond = 0
-init_cond = [T, co2_initial, q_init_cond, T, co2_initial,q_init_cond, T, co2_initial, q_init_cond, T, co2_initial, q_init_cond, T,co2_initial, q_init_cond]
+init_cond = [T_in, co2_initial, q_init_cond] * 5
 # ,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000
-params = [V, T, c_co2_0, episl_r, volumetric_flow]
+params = [V, T_in, c_co2_0, episl_r, volumetric_flow, Tw]
 N = 25 # Number of points 
 tspan = np.linspace(t0, tf, N)
 
@@ -220,7 +219,7 @@ temp_list = list(temp.values()) # make it as np array
 co2_list = list(co2.values())
 q_list = list(q.values())
 for i in range(0, N):
-    temp_list[i].insert(0, T)
+    temp_list[i].insert(0, T_in)
     co2_list[i].insert(0, co2_initial)
     q_list[i].insert(0, q_init_cond)
 
@@ -235,15 +234,35 @@ def mapWithL(input_array):
 
     temp_list = list(temp.values()) # make it as np array
     for i in range(0, N):
-        temp_list[i].insert(0, T)
+        temp_list[i].insert(0, T_in)
 
     np.array(temp_list)
     return temp_list
 
-r = cube(V/(20*math.pi))
-L = V / (math.pi * (r ** 2))
-vec_Z = np.linspace(0, L, 6)
+# Set up sliders 
+V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+")", value=V, start=.001, end=.005, step=.001)
+T_in_slider = Slider(title="Ambient temperature"+" (initial: "+str(T_in)+")", value=T_in, start=293, end=310, step=1)
+c_co2_0_slider = Slider(title="Initial CO2 concentration"+" (initial: "+str(c_co2_0)+")", value=c_co2_0, start=0.016, end=0.025, step=0.02)
+episl_r_slider = Slider(title="Episl r"+" (initial: "+str(episl_r)+")", value=episl_r, start= .3, end= .5, step=.03)
+volumetric_flow_slider = Slider(title="Initial flow"+" (initial: "+str(volumetric_flow)+")", value=volumetric_flow, start=1, end=5, step=1)
+Tw_slider = Slider(title="Water temperature"+" (initial: "+str(Tw)+")", value=Tw, start=293, end=310, step=1)
 
+inputs_reaction = (column(V_slider , T_in_slider, c_co2_0_slider, episl_r_slider, volumetric_flow_slider, Tw_slider))
+
+def getVecZ():
+    
+    V0 = V_slider.value
+    r = cube(V0/(LoverR*math.pi))
+    L = V0 / (math.pi * (r ** 2))
+    vec_Z = np.linspace(0, L, 6)
+    return vec_Z
+
+
+# r = cube(V/(20*math.pi))
+# L = V / (math.pi * (r ** 2))
+vec_Z = getVecZ()
+# print(vec_Z)
+L = vec_Z[5]
 TOOLS = "pan,undo,redo,reset,save,wheel_zoom,box_zoom"
 p = figure(width=500, height=500, x_range=[0, L],  y_range=[296, 299], tools=TOOLS,)
 p.multi_line(
@@ -287,10 +306,16 @@ p_q.legend.background_fill_alpha = 0.5
 p_q.grid.grid_line_color = "silver"
 
 
-tab1 =Panel(child=row(p, p_q, row( pco2, height=450)), title="Desktop")
+
+
+tab1 =Panel(child=row(p, p_q, row( pco2, inputs_reaction, height=450)), title="Desktop")
 tab2 =Panel(child=column(p, row( pco2, height=450)), title="Phone")
 tabs = Tabs(tabs = [tab1, tab2])
-show(tabs)
+
+curdoc().add_root(tabs)
+curdoc().title = "Direct Air Caoture"
+
+# show(tabs)
 # # Custom Setting for three graphs
 # temperature_name = ['T1', 'T2', 'T3', 'T4', 'T5']
 # temperature_colors = ['orangered',  'seagreen','deepskyblue', 'indigo', 'gold']
