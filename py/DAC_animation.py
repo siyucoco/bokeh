@@ -200,14 +200,14 @@ def mapWithL(input_array, initial_value):
     return res_list
 
 # Set up sliders 
-V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+")", value=V, start=.001, end=.005, step=.001)
-T_in_slider = Slider(title="Ambient temperature"+" (initial: "+str(T_in)+")", value=T_in, start=293, end=310, step=1)
-c_co2_0_slider = Slider(title="Initial CO2 concentration"+" (initial: "+str(c_co2_0)+")", value=c_co2_0, start=0.016, end=0.025, step=0.02)
+V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+" m^3)", value=V, start=.001, end=.005, step=.001)
+T_in_slider = Slider(title="Ambient temperature"+" (initial: "+str(T_in)+" K)", value=T_in, start=293, end=310, step=1)
+c_co2_0_slider = Slider(title="Initial CO2 concentration"+" (initial: "+str(c_co2_0)+" mol/m^3)", value=c_co2_0, start=0.016, end=0.025, step=0.02)
 episl_r_slider = Slider(title="Episl r"+" (initial: "+str(episl_r)+")", value=episl_r, start= .3, end= .5, step=.03)
 volumetric_flow_slider = Slider(title="Initial flow"+" (initial: "+str(volumetric_flow)+")", value=volumetric_flow, start=1, end=5, step=1)
-Tw_slider = Slider(title="Water temperature"+" (initial: "+str(Tw)+")", value=Tw, start=293, end=310, step=1)
-
-inputs_reaction = (column(V_slider , T_in_slider, c_co2_0_slider, episl_r_slider, volumetric_flow_slider, Tw_slider))
+Tw_slider = Slider(title="Water temperature"+" (initial: "+str(Tw)+" K)", value=Tw, start=293, end=310, step=1)
+time_step = tspan[1] # since t_span[0] is 0
+slider_time = Slider(title="Time Slider (s)", value=t0, start=t0, end=tf, step=time_step, width=300)
 
 def getVecZ():
     
@@ -249,47 +249,42 @@ temp_df = pd.DataFrame(temp_list, tspan)
 co2_df = pd.DataFrame(co2_array, tspan)
 q_df =  pd.DataFrame(q_array, tspan)
 # temp_list
+Tools = "crosshair,pan,reset,undo,box_zoom, save,wheel_zoom",
 
-source_temperature = ColumnDataSource(data=dict(x=vec_Z, y=temp_df.iloc[1]))
-plot_temperature = figure(height=400, width=400, title="L vs. Temperature ",
-              tools="crosshair,pan,reset,save,wheel_zoom",
-              x_range=[0, L], y_range=[266, 299])
+source_temperature = ColumnDataSource(data=dict(x=vec_Z, y=temp_df.iloc[0]))
+plot_temperature = figure(height=370, width=400, title="L vs. Temperature ",
+              tools= Tools,
+              x_range=[0, L], y_range=[296, 299])
 plot_temperature.line('x', 'y',  line_width=3, source = source_temperature, line_alpha=0.6, color = "gold")
+plot_temperature.xaxis.axis_label = "L (m)"
+plot_temperature.yaxis.axis_label = "Temeprarture (Kelvin)"
 
-source_co2 = ColumnDataSource(data=dict(co2_x=vec_Z, co2_y = co2_df.iloc[1]))
-plot_co2 = figure(height=400, width=400, title="L vs. Concentration of Co2",
-              tools="crosshair,pan,reset,save,wheel_zoom",
-              x_range=[0, L], y_range=[0, .4])
+source_co2 = ColumnDataSource(data=dict(co2_x=vec_Z, co2_y = co2_df.iloc[0]))
+plot_co2 = figure(height=370, width=400, title="L vs. Concentration of Co2",
+              tools=Tools,
+              x_range=[0, L], y_range=[0, .02])
 plot_co2.line('co2_x', 'co2_y',  line_width=3, source = source_co2, line_alpha=0.6, color = "gold")
+plot_co2.xaxis.axis_label = "L (m)"
+plot_co2.yaxis.axis_label = "Concentration of Co2 (mol/m^3)"
 
-source_q = ColumnDataSource(data=dict(q_x=vec_Z, q_y = q_df.iloc[1]))
-plot_q = figure(height=400, width=400, title="L vs. Rate of Generation",
-              tools="crosshair,pan,reset,save,wheel_zoom",
+source_q = ColumnDataSource(data=dict(q_x=vec_Z, q_y = q_df.iloc[0]))
+plot_q = figure(height=370, width=400, title="L vs. Rate of Generation",
+              tools=Tools,
               x_range=[0, L], y_range=[0, 1.2])
 plot_q.line('q_x', 'q_y',  line_width=3, source = source_q, line_alpha=0.6, color = "gold")
+plot_q.xaxis.axis_label = "L (m)"
+plot_q.yaxis.axis_label = "Rate of Generation (mol/kg"
 
-# reset_but = Button()
-# reset_but.js_on_click(CustomJS(args=dict(plot_q = plot_q), code = """
-#     plot_q.reset.emit()
-# """))
-
-time_step = tspan[1] # since t_span[0] is 0
-slider_time = Slider(title="Time Slider (s)", value=t0, start=t0, end=tf, step=time_step, width=500)
 
 def animate_update():
-    current_time = slider_time.value + time_step
+    current_time = slider_time.value
     source_temperature.data = dict(x=vec_Z, y=temp_df.loc[current_time])
+    source_co2.data = dict(co2_x=vec_Z, co2_y=co2_df.loc[current_time])
+    source_q.data = dict(q_x=vec_Z, q_y=q_df.loc[current_time])
+    current_time +=  time_step
     slider_time.value = current_time
     if current_time > tf:
         current_time = t0
-        
-
-# def updateTime(attrname, old, new):
-#     for i in range(0, N):
-#         source_temperature.data = dict(x=vec_Z, y=temp_df.iloc[i]) # get the 
-#         slider_time.value = tspan[i]
-
-# slider_time.on_change('value', updateTime)
 
 def update_data(attrname, old, new):
 
@@ -319,9 +314,9 @@ def update_data(attrname, old, new):
     co2_df = pd.DataFrame(co2_array, tspan)
     q_df =  pd.DataFrame(q_array, tspan)
 
-    source_temperature.data = dict(x=vec_Z, y=temp_df.iloc[1])
-    source_co2.data = dict(co2_x = vec_Z, co2_y = co2_df.iloc[1])
-    source_q.data = dict(q_x = vec_Z, q_y = q_df.iloc[1])
+    source_temperature.data = dict(x=vec_Z, y=temp_df.iloc[0])
+    source_co2.data = dict(co2_x = vec_Z, co2_y = co2_df.iloc[0])
+    source_q.data = dict(q_x = vec_Z, q_y = q_df.iloc[0])
 
 for w in [V_slider , T_in_slider, c_co2_0_slider, episl_r_slider, volumetric_flow_slider, Tw_slider]:
     w.on_change('value', update_data)
@@ -337,39 +332,23 @@ def animate():
         animate_button.label = '► Play'
         curdoc().remove_periodic_callback(callback_id)
 
-animate_button = Button(label='► Play', width=50)
+animate_button = Button(label='► Play', width=80)
 animate_button.on_event('button_click', animate)
 
-
-# source_temperature_animation = ColumnDataSource(data=dict(x=x, y=y))
-# callback = CustomJS(args=dict(source=source_temperature), code="""
-#     const data = source.data;
-#     const f = cb_obj.value
-#     const x = data['x']
-#     const y = data['y']
-#     for (let i = 0; i < x.length; i++) {
-#         y[i] = Math.pow(x[i], f)
-#     }
-#     source.change.emit();
-# """)
-# slider = Slider(start=0.1, end=4, value=1, step=.1, title="power")
-# slider.js_on_change('value', callback)
-
-
-# button = Button()
-
-# def callback(event):
-#     print('Python:Click')
-
-# button.on_event(ButtonClick, callback)
+def reset():
+    source_temperature.data = dict(x=vec_Z, y=temp_df.loc[0])
+    source_co2.data = dict(co2_x=vec_Z, co2_y=co2_df.loc[0])
+    source_q.data = dict(q_x=vec_Z, q_y=q_df.loc[0])
+reset_button = Button(label='Reset', width = 80)
+reset_button.on_event('button_click', reset)
 
 inputs_reaction = (column(V_slider , T_in_slider, c_co2_0_slider, episl_r_slider, volumetric_flow_slider, Tw_slider))
 
-inputs_time = column(animate_button, slider_time)
+inputs_button = row(slider_time, animate_button, reset_button)
 
-inputs = column(inputs_reaction, inputs_time)
+inputs = column(inputs_reaction, inputs_button)
 
-grid = gridplot([[inputs, plot_co2], [plot_temperature, plot_q]])
+grid = gridplot([[inputs, plot_q], [plot_co2, plot_temperature ]])
 
 tab1 =Panel(child= grid, title="Desktop")
 tab2 =Panel(child=column(plot_temperature, row( inputs_reaction, height=450)), title="Phone")
