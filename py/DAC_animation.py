@@ -217,26 +217,6 @@ def getVecZ():
     vec_Z = np.linspace(0, L, 6)
     return vec_Z
 
-# temp = {}
-# co2 = {}
-# q = {}
-# for i in range(0, N):
-#     temp['temp'+str(i)] = Extract(dotT, i)
-#     co2['co2'+str(i)] = Extract(dotCo2, i)
-#     q['q'+str(i)] = Extract(dotQ, i)
-
-# temp_list = list(temp.values()) # make it as np array
-# co2_array = list(co2.values())
-# q_array = list(q.values())
-# for i in range(0, N):
-#     temp_list[i].insert(0, T_in)
-#     co2_array[i].insert(0, co2_initial)
-#     q_array[i].insert(0, q_init_cond)
-
-# np.array(co2_array)
-# np.array(q_array)
-# np.array(temp_list)
-
 temp_list = mapWithL(dotT, T_in)
 co2_array = mapWithL(dotCo2, co2_initial)
 q_array = mapWithL(dotQ, q_init_cond)
@@ -255,7 +235,7 @@ source_temperature = ColumnDataSource(data=dict(x=vec_Z, y=temp_df.iloc[0]))
 plot_temperature = figure(height=370, width=400, title="L vs. Temperature ",
               tools= Tools,
               x_range=[0, L], y_range=[296, 299])
-plot_temperature.line('x', 'y',  line_width=3, source = source_temperature, line_alpha=0.6, color = "gold")
+plot_temperature.line('x', 'y',  line_width=3, source = source_temperature, line_alpha=0.6, color = "navy")
 plot_temperature.xaxis.axis_label = "L (m)"
 plot_temperature.yaxis.axis_label = "Temeprarture (Kelvin)"
 
@@ -263,7 +243,7 @@ source_co2 = ColumnDataSource(data=dict(co2_x=vec_Z, co2_y = co2_df.iloc[0]))
 plot_co2 = figure(height=370, width=400, title="L vs. Concentration of Co2",
               tools=Tools,
               x_range=[0, L], y_range=[0, .02])
-plot_co2.line('co2_x', 'co2_y',  line_width=3, source = source_co2, line_alpha=0.6, color = "gold")
+plot_co2.line('co2_x', 'co2_y',  line_width=3, source = source_co2, line_alpha=0.6, color = "navy")
 plot_co2.xaxis.axis_label = "L (m)"
 plot_co2.yaxis.axis_label = "Concentration of Co2 (mol/m^3)"
 
@@ -271,20 +251,20 @@ source_q = ColumnDataSource(data=dict(q_x=vec_Z, q_y = q_df.iloc[0]))
 plot_q = figure(height=370, width=400, title="L vs. Rate of Generation",
               tools=Tools,
               x_range=[0, L], y_range=[0, 1.2])
-plot_q.line('q_x', 'q_y',  line_width=3, source = source_q, line_alpha=0.6, color = "gold")
+plot_q.line('q_x', 'q_y',  line_width=3, source = source_q, line_alpha=0.6, color = "navy")
 plot_q.xaxis.axis_label = "L (m)"
 plot_q.yaxis.axis_label = "Rate of Generation (mol/kg"
 
 
 def animate_update():
-    current_time = slider_time.value
+    current_time = slider_time.value +  time_step
+    if current_time > tf:
+        current_time = t0
+
     source_temperature.data = dict(x=vec_Z, y=temp_df.loc[current_time])
     source_co2.data = dict(co2_x=vec_Z, co2_y=co2_df.loc[current_time])
     source_q.data = dict(q_x=vec_Z, q_y=q_df.loc[current_time])
-    current_time +=  time_step
     slider_time.value = current_time
-    if current_time > tf:
-        current_time = t0
 
 def update_data(attrname, old, new):
 
