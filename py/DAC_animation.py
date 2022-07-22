@@ -9,7 +9,7 @@ import math
 from matplotlib.pyplot import plot
 from scipy.integrate import solve_ivp, odeint
 from bokeh.io import save, curdoc
-from bokeh.layouts import column, row
+from bokeh.layouts import column, row, gridplot
 from bokeh.model import Model
 from bokeh.models import CustomJS, Slider, Callback, HoverTool, Button
 from bokeh.plotting import ColumnDataSource, figure, show
@@ -268,6 +268,28 @@ plot_q = figure(height=400, width=400, title="L vs. Rate of Generation",
               x_range=[0, L], y_range=[0, 1.2])
 plot_q.line('q_x', 'q_y',  line_width=3, source = source_q, line_alpha=0.6, color = "gold")
 
+# reset_but = Button()
+# reset_but.js_on_click(CustomJS(args=dict(plot_q = plot_q), code = """
+#     plot_q.reset.emit()
+# """))
+
+time_step = tspan[1] # since t_span[0] is 0
+slider_time = Slider(title="Time Slider (s)", value=t0, start=t0, end=tf, step=time_step, width=500)
+
+def animate_update():
+    current_time = slider_time.value + time_step
+    source_temperature.data = dict(x=vec_Z, y=temp_df.loc[current_time])
+    slider_time.value = current_time
+    if current_time > tf:
+        current_time = t0
+        
+
+# def updateTime(attrname, old, new):
+#     for i in range(0, N):
+#         source_temperature.data = dict(x=vec_Z, y=temp_df.iloc[i]) # get the 
+#         slider_time.value = tspan[i]
+
+# slider_time.on_change('value', updateTime)
 
 def update_data(attrname, old, new):
 
@@ -278,6 +300,7 @@ def update_data(attrname, old, new):
     episl_r_temp = episl_r_slider.value
     volumetric_flow_temp = volumetric_flow_slider.value
     Tw_temp = Tw_slider.value
+    # time_temp = slider_time.value
 
     # Generate the new curve
     params_temp = [V_temp, T_in_temp , c_co2_0_temp, episl_r_temp, volumetric_flow_temp, Tw_temp]
@@ -303,11 +326,55 @@ def update_data(attrname, old, new):
 for w in [V_slider , T_in_slider, c_co2_0_slider, episl_r_slider, volumetric_flow_slider, Tw_slider]:
     w.on_change('value', update_data)
 
+def animate():
+    global callback_id
+    if animate_button.label == '► Play':
+
+        animate_button.label = '❚❚ Pause'
+
+        callback_id = curdoc().add_periodic_callback(animate_update, 1*1000.0) # s to milliseconds conversion
+    else:
+        animate_button.label = '► Play'
+        curdoc().remove_periodic_callback(callback_id)
+
+animate_button = Button(label='► Play', width=50)
+animate_button.on_event('button_click', animate)
+
+
+# source_temperature_animation = ColumnDataSource(data=dict(x=x, y=y))
+# callback = CustomJS(args=dict(source=source_temperature), code="""
+#     const data = source.data;
+#     const f = cb_obj.value
+#     const x = data['x']
+#     const y = data['y']
+#     for (let i = 0; i < x.length; i++) {
+#         y[i] = Math.pow(x[i], f)
+#     }
+#     source.change.emit();
+# """)
+# slider = Slider(start=0.1, end=4, value=1, step=.1, title="power")
+# slider.js_on_change('value', callback)
+
+
+# button = Button()
+
+# def callback(event):
+#     print('Python:Click')
+
+# button.on_event(ButtonClick, callback)
+
 inputs_reaction = (column(V_slider , T_in_slider, c_co2_0_slider, episl_r_slider, volumetric_flow_slider, Tw_slider))
 
-tab1 =Panel(child=row(plot_temperature, plot_co2, plot_q, row(  inputs_reaction, height=450)), title="Desktop")
+inputs_time = column(animate_button, slider_time)
+
+inputs = column(inputs_reaction, inputs_time)
+
+grid = gridplot([[inputs, plot_co2], [plot_temperature, plot_q]])
+
+tab1 =Panel(child= grid, title="Desktop")
 tab2 =Panel(child=column(plot_temperature, row( inputs_reaction, height=450)), title="Phone")
 tabs = Tabs(tabs = [tab1, tab2])
+
 
 curdoc().add_root(tabs)
 curdoc().title = "Direct Air Caoture"
