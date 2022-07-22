@@ -16,6 +16,13 @@ from bokeh.plotting import ColumnDataSource, figure, show
 from bokeh.models.widgets import Panel, Tabs
 import numpy as np
 import pandas as pd
+
+# To do list:
+# addd a input to control how much time the simulation can run - tf
+# run time input
+# breakthrough point, 
+
+
 # --------------------- Static Parameters    --------------------- #
 
 b0 = 93 * (10**-5)  # 93      unit : 1/bars
@@ -137,7 +144,7 @@ def deriv1(t, y, params):
 
 # ------------------ User generated - Slider initial value -------------- #
 V = .003  # volume
-T_in= 298.0 # +273 ambrient temperature, T_in ambient temperature,  also inlet temperature, in kelvin  unit: kelvin, depends on location
+T_in= 298.0 # +273 ambient temperature, T_in ambient temperature,  also inlet temperature, in kelvin  unit: kelvin, depends on location
 c_co2_0 = .016349 # mol/m^3    
 episl_r = 0.3  # void
 volumetric_flow = .01 # m^3/s
@@ -147,9 +154,9 @@ Tw = 293.0 # water temperature, utility
 
 # ------------------ Initial Conditions to set up solve_ivp -------------- #
 t0, tf = 0.0, 43200.0 # 12hrs
-co2_initial = 0
+co2_initial = 0 
 q_init_cond = 0
-T_initial = 298.0
+T_initial = T_in # initial temperature
 init_cond = [T_initial, co2_initial, q_init_cond] * 5
 # ,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000,20.000, 0.000, 0.000
 params = [V, T_in, c_co2_0, episl_r, volumetric_flow, Tw]
@@ -167,26 +174,6 @@ dotT= [soln.y[0], soln.y[3], soln.y[6], soln.y[9], soln.y[12]]
 dotCo2 = [soln.y[1], soln.y[4], soln.y[7], soln.y[10], soln.y[13]]
 dotQ = [soln.y[2], soln.y[5], soln.y[8], soln.y[11], soln.y[14]]
 
-# temp = {}
-# co2 = {}
-# q = {}
-# for i in range(0, N):
-#     temp['temp'+str(i)] = Extract(dotT, i)
-#     co2['co2'+str(i)] = Extract(dotCo2, i)
-#     q['q'+str(i)] = Extract(dotQ, i)
-
-# temp_list = list(temp.values()) # make it as np array
-# co2_list = list(co2.values())
-# q_list = list(q.values())
-# for i in range(0, N):
-#     temp_list[i].insert(0, T_in)
-#     co2_list[i].insert(0, co2_initial)
-#     q_list[i].insert(0, q_init_cond)
-
-# np.array(co2_list)
-# np.array(q_list)
-# # np.array(temp_list)
-
 def mapWithL(input_array, initial_value):
     res = {}
     for i in range(0, N):
@@ -200,12 +187,12 @@ def mapWithL(input_array, initial_value):
     return res_list
 
 # Set up sliders 
-V_slider = Slider(title="Volume of bed"+" (initial: "+str(V)+" m^3)", value=V, start=.001, end=.005, step=.001)
-T_in_slider = Slider(title="Ambient temperature"+" (initial: "+str(T_in)+" K)", value=T_in, start=293, end=310, step=1)
-c_co2_0_slider = Slider(title="Initial CO2 concentration"+" (initial: "+str(c_co2_0)+" mol/m^3)", value=c_co2_0, start=0.016, end=0.025, step=0.02)
-episl_r_slider = Slider(title="Episl r"+" (initial: "+str(episl_r)+")", value=episl_r, start= .3, end= .5, step=.03)
-volumetric_flow_slider = Slider(title="Initial flow"+" (initial: "+str(volumetric_flow)+")", value=volumetric_flow, start=1, end=5, step=1)
-Tw_slider = Slider(title="Water temperature"+" (initial: "+str(Tw)+" K)", value=Tw, start=293, end=310, step=1)
+V_slider = Slider(title="Volume of bed"+" (default: "+str(V)+" m^3)", value=V, start=.001, end=.005, step=.001)
+T_in_slider = Slider(title="Ambient temperature"+" (default: "+str(T_in)+" K)", value=T_in, start=285, end=310, step=1)
+c_co2_0_slider = Slider(title="Inlet CO2 concentration"+" (default: "+str(c_co2_0)+" mol/m^3)", value=c_co2_0, start=0.0, end=0.03, step=0.005)
+episl_r_slider = Slider(title="Episl r"+" (default: "+str(episl_r)+")", value=episl_r, start= .3, end= .5, step=.03)
+volumetric_flow_slider = Slider(title="Initial flow"+" (default: "+str(volumetric_flow)+")", value=volumetric_flow, start=.001, end=1, step=.005)
+Tw_slider = Slider(title="Water temperature"+" (default: "+str(Tw)+" K)", value=Tw, start=293, end=310, step=1)
 time_step = tspan[1] # since t_span[0] is 0
 slider_time = Slider(title="Time Slider (s)", value=t0, start=t0, end=tf, step=time_step, width=300)
 
@@ -232,28 +219,28 @@ q_df =  pd.DataFrame(q_array, tspan)
 Tools = "crosshair,pan,reset,undo,box_zoom, save,wheel_zoom",
 
 source_temperature = ColumnDataSource(data=dict(x=vec_Z, y=temp_df.iloc[0]))
-plot_temperature = figure(height=370, width=400, title="L vs. Temperature ",
+plot_temperature = figure(height=370, width=400, title="Axial Profile of Column Temperature ",
               tools= Tools,
               x_range=[0, L], y_range=[296, 299])
 plot_temperature.line('x', 'y',  line_width=3, source = source_temperature, line_alpha=0.6, color = "navy")
 plot_temperature.xaxis.axis_label = "L (m)"
-plot_temperature.yaxis.axis_label = "Temeprarture (Kelvin)"
+plot_temperature.yaxis.axis_label = "Temperature (K)"
 
 source_co2 = ColumnDataSource(data=dict(co2_x=vec_Z, co2_y = co2_df.iloc[0]))
-plot_co2 = figure(height=370, width=400, title="L vs. Concentration of Co2",
+plot_co2 = figure(height=370, width=400, title="Axial Profile of Gas Phase CO2",
               tools=Tools,
               x_range=[0, L], y_range=[0, .02])
 plot_co2.line('co2_x', 'co2_y',  line_width=3, source = source_co2, line_alpha=0.6, color = "navy")
 plot_co2.xaxis.axis_label = "L (m)"
-plot_co2.yaxis.axis_label = "Concentration of Co2 (mol/m^3)"
+plot_co2.yaxis.axis_label = "Gaseous Concentration of CO2 (mol/m^3)"
 
 source_q = ColumnDataSource(data=dict(q_x=vec_Z, q_y = q_df.iloc[0]))
-plot_q = figure(height=370, width=400, title="L vs. Rate of Generation",
+plot_q = figure(height=370, width=400, title="Axial profile of adsorbed CO2",
               tools=Tools,
               x_range=[0, L], y_range=[0, 1.2])
 plot_q.line('q_x', 'q_y',  line_width=3, source = source_q, line_alpha=0.6, color = "navy")
 plot_q.xaxis.axis_label = "L (m)"
-plot_q.yaxis.axis_label = "Rate of Generation (mol/kg"
+plot_q.yaxis.axis_label = "CO2 Adsorbed (mol/kg)"
 
 
 def animate_update():
